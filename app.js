@@ -1014,9 +1014,6 @@ function createStockChartPanel() {
 }
 
 function renderStockChartOptions() {
-   .from("stock_price_history")
-.select("stock_id, price, recorded_at")
-.order("recorded_at", { ascending: true })
   const select = $("stock-chart-select");
   if (!select) return;
 
