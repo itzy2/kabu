@@ -1536,3 +1536,21 @@ refreshDashboard = async function(showNotice = false) {
     renderAdminPanel();
   }
 };
+
+/* 管理者パネルの表示制御 */
+function updateAdminPanelVisibility() {
+  const panel = document.getElementById("admin-control-panel");
+
+  if (!panel) return;
+
+  const isAdmin = currentProfile?.role === "admin";
+
+  panel.classList.toggle("hidden", !isAdmin);
+}
+
+/* ログイン状態の変化を監視 */
+const adminPanelTimer = setInterval(() => {
+  if (currentProfile) {
+    updateAdminPanelVisibility();
+  }
+}, 1000);
