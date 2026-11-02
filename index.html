@@ -8,8 +8,14 @@
   <link rel="stylesheet" href="style.css">
 
   <!-- Supabase公式JavaScriptライブラリ -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- 株価グラフ用ライブラリ -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- アプリ本体 -->
+<script src="app.js" defer></script>
+  
 </head>
 
 <body>
@@ -18,7 +24,7 @@
       <span class="brand-mark">SP</span>
       <span class="brand-text">
         STOCK <strong>POINT</strong>
-        <small>VIRTUAL STOCK MARKET</small>
+        <small>株価シミュレーション</small>
       </span>
     </a>
 
@@ -48,19 +54,19 @@
           <span>資産を育てよう。</span>
         </h1>
         <p class="hero-copy">
-          2人で楽しむ仮想株式取引サービス。
-          架空企業の株式を売買して、資産の変化を確認しよう。
+          誰でも楽しめる想株式取引サービス。
+          企業の株式を売買して、資産の変化を確認しよう。
         </p>
 
         <div class="hero-pills">
-          <span>6銘柄</span>
-          <span>初期ポイント 5,000</span>
+          <span>20銘柄</span>
+          <span>初期ポイント 11,000</span>
           <span>実際のお金は不要</span>
         </div>
 
         <div class="hero-note">
           <span class="note-icon">i</span>
-          このサイトは仮想取引専用です。実際のお金は使用しません。
+          このサイトは取引専用です。実際のお金は使用しません。
         </div>
       </div>
 
@@ -143,7 +149,43 @@
           <small>初期資産5,000ポイントとの比較</small>
         </article>
       </section>
+　<!-- イベント・メンテナンス予定 -->
+　<section id="events-section" class="events-section">
+　  <h2>📅 イベント・メンテナンス予定</h2>
 
+  <div class="event-featured">
+    <h3>イベント</h3>
+    <div id="next-event">
+      🎉 毎月7日は「株式ポイント倍デイ」！
+
+毎月7日の24時間限定で、30秒ごとに500ポイントを自動付与！
+1日最大1,440,000ポイント獲得できます。
+
+この特別な1日をお見逃しなく！　
+    </div>
+  </div>
+
+  <div class="event-featured">
+    <h3>🔧 次回メンテナンス</h3>
+    <div id="next-maintenance">
+      11月2日　11:00～12:20
+    </div>
+  </div>
+
+  <div class="event-featured">
+    <h3>【重要】STOCK POINT 注意事項</h3>
+    <div id="event-list">
+1. 不正操作・複数アカウントの悪用・他人のアカウントへの無断ログインは禁止です。
+2. 取引完了後のキャンセルは原則できません。
+3. 不具合やメンテナンスにより、予告なくサービスを停止する場合があります。
+4. 不正行為が確認された場合、ポイント没収・取引停止・アカウント停止などの措置を行います。
+5. 運営の指示に従わない場合、利用を禁止することがあります。
+6. ポイントの現金化・譲渡は禁止です。
+
+**ルール違反には厳正に対処します。利用者は必ず本注意事項を守ってください。**
+    </div>
+  </div>
+</section>
       <!-- 株価と注文 -->
       <div class="main-grid">
         <section class="card market-card">
