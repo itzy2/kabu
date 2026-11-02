@@ -1,487 +1,328 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+<!DOCTYPE html>  <html lang="ja">  
+<head>  
+  <meta charset="UTF-8">  
+  <meta name="viewport" content="width=device-width, initial-scale=1">  
+  <meta name="theme-color" content="#10243a">  
+  <title>STOCK POINT | 仮想株式市場</title>  
+  <link rel="stylesheet" href="style.css">    <!-- Supabase公式JavaScriptライブラリ -->  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>  <!-- 株価グラフ用ライブラリ -->  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  <!-- アプリ本体 -->  <script src="app.js" defer></script>  </head>  <body>  
+  <header class="topbar">  
+    <a class="brand" href="#">  
+      <span class="brand-mark">SP</span>  
+      <span class="brand-text">  
+        STOCK <strong>POINT</strong>  
+        <small>株価シミュレーション</small>  
+      </span>  
+    </a>  <div id="user-area" class="user-area hidden">  
+  <span id="whoami"></span>  
+  <button id="logout-btn" class="button button-ghost" type="button">  
+    ログアウト  
+  </button>  
+</div>
 
-  <title>STOCK POINT | 仮想株式市場</title>
+  </header>    <main class="container">  
+    <div id="config-warning" class="notice warning hidden">  
+      <strong>Supabaseの接続設定が必要です</strong>  
+      <p>  
+        app.js の SUPABASE_URL と SUPABASE_PUBLISHABLE_KEY に、  
+        SupabaseのProject URLとPublishable keyを設定してください。  
+      </p>  
+    </div>  <!-- ログイン画面 -->  
+<section id="auth-panel" class="auth-layout">  
+  <div class="hero">  
+    <p class="eyebrow">SIMULATED INVESTING</p>  
+    <h1>  
+      市場を読み、<br>  
+      <span>資産を育てよう。</span>  
+    </h1>  
+    <p class="hero-copy">  
+      誰でも楽しめる想株式取引サービス。  
+      企業の株式を売買して、資産の変化を確認しよう。  
+    </p>  
 
-  <meta name="theme-color" content="#0b1220">
+    <div class="hero-pills">  
+      <span>20銘柄</span>  
+      <span>初期ポイント 11,000</span>  
+      <span>実際のお金は不要</span>  
+    </div>  
 
-  <link rel="stylesheet" href="style.css">
+    <div class="hero-note">  
+      <span class="note-icon">i</span>  
+      このサイトは取引専用です。実際のお金は使用しません。  
+    </div>  
+  </div>  
 
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <form id="login-form" class="card login-card">  
+    <p class="eyebrow">MEMBER LOGIN</p>  
+    <h2>ログイン</h2>  
+    <p class="muted">登録済みのアカウントでログインしてください。</p>  
 
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <label for="email">メールアドレス</label>  
+    <input  
+      id="email"  
+      type="email"  
+      autocomplete="username"  
+      placeholder="メールアドレス"  
+      required  
+    >  
 
-  <style>
-    :root {
-      color-scheme: dark;
-      --bg: #0b1220;
-      --card: #131e31;
-      --line: #26364f;
-      --text: #e8eef8;
-      --muted: #9fb0c9;
-      --blue: #5aa2ff;
-      --green: #39d98a;
-      --red: #ff6b78;
-    }
+    <label for="password">パスワード</label>  
+    <input  
+      id="password"  
+      type="password"  
+      autocomplete="current-password"  
+      placeholder="パスワード"  
+      required  
+    >  
 
-    * {
-      box-sizing: border-box;
-    }
+    <button class="button button-primary full" type="submit">  
+      ログイン  
+    </button>  
 
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    }
+    <p id="login-message" class="form-message" role="status"></p>  
 
-    header {
-      padding: 20px 16px;
-      background: #101a2b;
-      border-bottom: 1px solid var(--line);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
+    <p class="hint">  
+      アカウントはSupabaseのAuthenticationで登録したものを使用します。  
+    </p>  
+  </form>  
+</section>  
 
-    h1 {
-      margin: 0;
-      font-size: 1.45rem;
-    }
+<!-- ログイン後の画面 -->  
+<section id="app-panel" class="hidden">  
+  <div class="welcome-row">  
+    <div>  
+      <p class="eyebrow">YOUR PORTFOLIO</p>  
+      <h1>マーケットダッシュボード</h1>  
+      <p class="muted">  
+        株価を確認して、購入・売却を行いましょう。  
+      </p>  
+    </div>  
 
-    header p {
-      margin: 5px 0 0;
-      color: var(--muted);
-    }
+    <div class="market-status">  
+      <span class="status-dot"></span>  
+      仮想市場  
+      <span id="last-updated">読み込み中</span>  
+    </div>  
+  </div>  
 
-    main {
-      max-width: 1200px;
-      margin: auto;
-      padding: 18px;
-    }
+  <!-- 資産サマリー -->  
+  <section class="summary-grid">  
+    <article class="summary-card">  
+      <span>保有ポイント</span>  
+      <strong id="cash-value">—</strong>  
+      <small>売買に使用できるポイント</small>  
+    </article>  
 
-    .card {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 16px;
-      margin-bottom: 16px;
-    }
+    <article class="summary-card">  
+      <span>保有株式評価額</span>  
+      <strong id="holdings-value">—</strong>  
+      <small>現在株価 × 保有株数</small>  
+    </article>  
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 12px;
-    }
+    <article class="summary-card summary-accent">  
+      <span>総資産</span>  
+      <strong id="total-value">—</strong>  
+      <small>ポイント＋保有株式評価額</small>  
+    </article>  
 
-    label {
-      display: block;
-      color: var(--muted);
-      font-size: .9rem;
-      margin: 8px 0 5px;
-    }
-
-    input, select, button {
-      font: inherit;
-      border-radius: 9px;
-      padding: 10px 12px;
-      border: 1px solid var(--line);
-      background: #0d1728;
-      color: var(--text);
-      width: 100%;
-    }
-
-    button {
-      cursor: pointer;
-      background: #1b4f91;
-      border-color: #2c68b4;
-      font-weight: 600;
-    }
-
-    button.secondary {
-      background: #26364f;
-      border-color: #364a68;
-    }
-
-    button.danger {
-      background: #7b2836;
-      border-color: #a43a4d;
-    }
-
-    button:disabled {
-      opacity: .5;
-      cursor: not-allowed;
-    }
-
-    .row {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .row > * {
-      flex: 1;
-      min-width: 130px;
-    }
-
-    .status {
-      color: var(--muted);
-      white-space: pre-wrap;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .metric {
-      font-size: 1.6rem;
-      font-weight: 700;
-    }
-
-    .muted {
-      color: var(--muted);
-    }
-
-    .good {
-      color: var(--green);
-    }
-
-    .bad {
-      color: var(--red);
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 620px;
-    }
-
-    th, td {
-      padding: 10px;
-      border-bottom: 1px solid var(--line);
-      text-align: left;
-      white-space: nowrap;
-    }
-
-    th {
-      color: var(--muted);
-      font-weight: 600;
-    }
-
-    .table-wrap {
-      overflow: auto;
-    }
-
-    h2 {
-      font-size: 1.12rem;
-      margin: 0 0 12px;
-    }
-
-    .section-title {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    #chart-canvas {
-      width: 100%;
-      max-height: 360px;
-    }
-
-    footer {
-      text-align: center;
-      color: var(--muted);
-      padding: 20px;
-    }
-  </style>
-</head>
-
-<body>
-
-<header>
-  <div>
-    <h1>STOCK POINT</h1>
-    <p>株価シミュレーション</p>
-  </div>
-
-  <div class="row" style="max-width:320px">
-    <span id="header-user" class="muted">未ログイン</span>
-    <button id="logout-btn" class="secondary hidden">ログアウト</button>
-  </div>
-</header>
-
-<main>
-
-  <!-- ログイン -->
-  <section id="auth-section" class="card">
-
-    <h2>ログイン / 新規登録</h2>
-
-    <div class="grid">
-      <div>
-        <label for="auth-email">メールアドレス</label>
-        <input
-          id="auth-email"
-          type="email"
-          autocomplete="email"
-          placeholder="name@example.com">
-      </div>
-
-      <div>
-        <label for="auth-password">パスワード</label>
-        <input
-          id="auth-password"
-          type="password"
-          autocomplete="current-password"
-          placeholder="パスワード">
-      </div>
-    </div>
-
-    <div class="row" style="margin-top:12px">
-      <button id="login-btn">ログイン</button>
-      <button id="signup-btn" class="secondary">新規登録</button>
-    </div>
-
-    <p id="auth-message" class="status"></p>
-
+    <article class="summary-card">  
+      <span>損益（参考）</span>  
+      <strong id="profit-value">—</strong>  
+      <small>初期資産5,000ポイントとの比較</small>  
+    </article>  
   </section>
 
-  <!-- アプリ本体 -->
-  <section id="app-section" class="hidden">
+　<!-- イベント・メンテナンス予定 -->
+　<section id="events-section" class="events-section">
+　  <h2>📅 イベント・メンテナンス予定</h2>
 
-    <!-- 資産情報 -->
-    <section class="grid">
+  <div class="event-featured">  
+    <h3>イベント</h3>  
+    <div id="next-event">  
+      🎉 毎月7日は「株式ポイント倍デイ」！  毎月7日の24時間限定で、30秒ごとに500ポイントを自動付与！
+1日最大1,440,000ポイント獲得できます。
 
-      <div class="card">
-        <div class="muted">保有ポイント</div>
-        <div id="points-value" class="metric">-</div>
-      </div>
+この特別な1日をお見逃しなく！　
+</div>
 
-      <div class="card">
-        <div class="muted">保有株式評価額</div>
-        <div id="assets-value" class="metric">-</div>
-      </div>
+  </div>    <div class="event-featured">  
+    <h3>🔧 次回メンテナンス</h3>  
+    <div id="next-maintenance">  
+      11月2日　11:00～12:20  
+    </div>  
+  </div>    <div class="event-featured">  
+    <h3>【重要】STOCK POINT 注意事項</h3>  
+    <div id="event-list">  
+1. 不正操作・複数アカウントの悪用・他人のアカウントへの無断ログインは禁止です。  
+2. 取引完了後のキャンセルは原則できません。  
+3. 不具合やメンテナンスにより、予告なくサービスを停止する場合があります。  
+4. 不正行為が確認された場合、ポイント没収・取引停止・アカウント停止などの措置を行います。  
+5. 運営の指示に従わない場合、利用を禁止することがあります。  
+6. ポイントの現金化・譲渡は禁止です。  ルール違反には厳正に対処します。利用者は必ず本注意事項を守ってください。
+</div>
 
-      <div class="card">
-        <div class="muted">総資産</div>
-        <div id="total-value" class="metric">-</div>
-      </div>
+  </div>  
+</section>  
+      <!-- 株価と注文 -->  
+      <div class="main-grid">  
+        <section class="card market-card">  
+          <div class="section-heading">  
+            <div>  
+              <p class="eyebrow">MARKET</p>  
+              <h2>株価一覧</h2>  
+            </div>  
+            <button id="refresh-btn" class="button button-ghost" type="button">  
+              更新  
+            </button>  
+          </div>  <div class="table-wrap">  
+        <table>  
+          <thead>  
+            <tr>  
+              <th>銘柄</th>  
+              <th>現在株価</th>  
+              <th>前回比</th>  
+              <th>保有数</th>  
+              <th>売買</th>  
+            </tr>  
+          </thead>  
+          <tbody id="stocks-body">  
+            <tr>  
+              <td colspan="5" class="empty">読み込み中…</td>  
+            </tr>  
+          </tbody>  
+        </table>  
+      </div>  
+    </section>  
 
-      <div class="card">
-        <div class="muted">ユーザー</div>
-        <div id="profile-name" class="metric" style="font-size:1.15rem">-</div>
-        <div id="profile-role" class="muted">-</div>
-      </div>
+    <section class="card trade-card">  
+      <p class="eyebrow">PLACE AN ORDER</p>  
+      <h2>株式を売買</h2>  
 
-    </section>
+      <form id="trade-form">  
+        <label for="trade-stock">銘柄</label>  
+        <select id="trade-stock" required></select>  
 
-    <!-- 株式一覧 -->
-    <section class="card">
+        <div class="side-toggle">  
+          <label>  
+            <input type="radio" name="side" value="buy" checked>  
+            <span>購入</span>  
+          </label>  
+          <label>  
+            <input type="radio" name="side" value="sell">  
+            <span>売却</span>  
+          </label>  
+        </div>  
 
-      <div class="section-title">
-        <h2>株式一覧・取引</h2>
-        <span id="refresh-status" class="muted">更新待機</span>
-      </div>
+        <label for="quantity">株数</label>  
+        <input  
+          id="quantity"  
+          type="number"  
+          min="1"  
+          max="100000"  
+          step="1"  
+          value="1"  
+          required  
+        >  
 
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>銘柄</th>
-              <th>株価(pt)</th>
-              <th>前日比</th>
-              <th>保有株数</th>
-              <th>評価額(pt)</th>
-              <th>購入/売却</th>
-            </tr>
-          </thead>
+        <div class="order-estimate">  
+          <span>概算取引額</span>  
+          <strong id="estimate">—</strong>  
+        </div>  
 
-          <tbody id="stocks-body">
-            <tr>
-              <td colspan="6">読み込み中...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <button id="trade-submit" class="button button-primary full" type="submit">  
+          注文を確定  
+        </button>  
 
-      <p id="trade-message" class="status"></p>
+        <p id="trade-message" class="form-message" role="status"></p>  
+      </form>  
 
-    </section>
+      <p class="hint">  
+        注文確定時の株価が適用されます。取引は取り消せないため、内容を確認してください。  
+      </p>  
+    </section>  
+  </div>  
 
-    <!-- 株価グラフ -->
-    <section class="card">
+  <!-- 保有株とランキング -->  
+  <div class="lower-grid">  
+    <section class="card">  
+      <div class="section-heading">  
+        <div>  
+          <p class="eyebrow">MY POSITIONS</p>  
+          <h2>保有株</h2>  
+        </div>  
+      </div>  
 
-      <h2>会社別株価グラフ</h2>
+      <div class="table-wrap">  
+        <table>  
+          <thead>  
+            <tr>  
+              <th>銘柄</th>  
+              <th>保有数</th>  
+              <th>現在株価</th>  
+              <th>評価額</th>  
+            </tr>  
+          </thead>  
+          <tbody id="holdings-body">  
+            <tr><td colspan="4" class="empty">読み込み中…</td></tr>  
+          </tbody>  
+        </table>  
+      </div>  
+    </section>  
 
-      <div class="row">
-        <select id="stock-chart-select" aria-label="グラフ銘柄"></select>
-        <button id="chart-reload" class="secondary">グラフ再読込</button>
-      </div>
+    <section class="card">  
+      <div class="section-heading">  
+        <div>  
+          <p class="eyebrow">LEADERBOARD</p>  
+          <h2>資産ランキング</h2>  
+        </div>  
+      </div>  
 
-      <p id="chart-message" class="status">
-        銘柄を選択してください。
-      </p>
+      <div id="ranking-list" class="ranking-list">  
+        <p class="empty">読み込み中…</p>  
+      </div>  
+    </section>  
+  </div>  
 
-      <canvas id="chart-canvas"></canvas>
+  <!-- 取引履歴 -->  
+  <section class="card history-card">  
+    <div class="section-heading">  
+      <div>  
+        <p class="eyebrow">TRANSACTIONS</p>  
+        <h2 id="history-title">自分の取引履歴</h2>  
+      </div>  
+    </div>  
 
-    </section>
+    <div class="table-wrap">  
+      <table>  
+        <thead>  
+          <tr>  
+            <th>日時</th>  
+            <th>利用者</th>  
+            <th>銘柄</th>  
+            <th>取引</th>  
+            <th>株数</th>  
+            <th>株価</th>  
+            <th>合計</th>  
+          </tr>  
+        </thead>  
+        <tbody id="history-body">  
+          <tr><td colspan="7" class="empty">読み込み中…</td></tr>  
+        </tbody>  
+      </table>  
+    </div>  
 
-    <!-- ランキング -->
-    <section class="card">
+    <p id="admin-note" class="hint hidden">  
+      管理者モード：全利用者の取引履歴を表示しています。  
+    </p>  
+  </section>  
 
-      <h2>ランキング</h2>
+  <div id="global-message" class="notice hidden" role="status"></div>  
+</section>  
 
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>順位</th>
-              <th>ユーザー</th>
-              <th>ポイント</th>
-              <th>株式評価額</th>
-              <th>総資産</th>
-            </tr>
-          </thead>
-
-          <tbody id="ranking-body"></tbody>
-        </table>
-      </div>
-
-    </section>
-
-    <!-- 自分の取引履歴 -->
-    <section class="card">
-
-      <h2>自分の取引履歴</h2>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>日時</th>
-              <th>銘柄</th>
-              <th>売買</th>
-              <th>株数</th>
-              <th>単価</th>
-              <th>合計</th>
-            </tr>
-          </thead>
-
-          <tbody id="my-transactions-body"></tbody>
-        </table>
-      </div>
-
-    </section>
-
-    <!-- 管理者 -->
-    <section id="admin-section" class="card hidden">
-
-      <h2>管理者パネル</h2>
-
-      <div class="grid">
-
-        <div>
-          <label>対象ユーザー</label>
-          <select id="admin-user-select"></select>
-        </div>
-
-        <div>
-          <label>ポイント数</label>
-          <input
-            id="admin-points-amount"
-            type="number"
-            min="1"
-            step="1"
-            value="1000">
-        </div>
-
-        <div>
-          <label>ポイント操作</label>
-          <select id="admin-points-mode">
-            <option value="add">追加</option>
-            <option value="subtract">減算</option>
-            <option value="set">設定</option>
-          </select>
-        </div>
-
-      </div>
-
-      <button id="admin-points-btn" style="margin-top:10px">
-        ポイントを変更
-      </button>
-
-      <hr style="border-color:var(--line);margin:18px 0">
-
-      <div class="grid">
-
-        <div>
-          <label>対象銘柄</label>
-          <select id="admin-stock-select"></select>
-        </div>
-
-        <div>
-          <label>変更後株価(pt)</label>
-          <input
-            id="admin-stock-price"
-            type="number"
-            min="1"
-            value="1000">
-        </div>
-
-      </div>
-
-      <div class="row" style="margin-top:10px">
-        <button id="admin-price-btn">株価を設定</button>
-        <button id="admin-random-btn" class="secondary">
-          全銘柄をランダム更新
-        </button>
-      </div>
-
-      <p id="admin-message" class="status"></p>
-
-      <h2 style="margin-top:18px">全利用者の取引履歴</h2>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>日時</th>
-              <th>ユーザー</th>
-              <th>銘柄</th>
-              <th>売買</th>
-              <th>株数</th>
-              <th>単価</th>
-              <th>合計</th>
-            </tr>
-          </thead>
-
-          <tbody id="all-transactions-body"></tbody>
-        </table>
-      </div>
-
-    </section>
-
-  </section>
-
-  <div id="global-message" class="status"></div>
-
-</main>
-
-<footer>
-  STOCK POINT · 仮想株式市場
+<footer>  
+  <span>STOCK POINT</span>  
+  <span>仮想株式市場 · 実際のお金は使用しません</span>  
 </footer>
 
-<script src="app.js"></script>
-
-</body>
+  </main>  
+</body>  
 </html>
