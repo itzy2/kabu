@@ -340,7 +340,73 @@
           管理者モード：全利用者の取引履歴を表示しています。
         </p>
       </section>
+<!-- 管理者専用：ポイント・株価管理 -->
+<section id="admin-control-panel" class="card hidden">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">ADMINISTRATION</p>
+      <h2>管理者コントロール</h2>
+    </div>
+  </div>
 
+  <h3>ユーザー別ポイント管理</h3>
+
+  <label for="admin-user-select">対象ユーザー</label>
+  <select id="admin-user-select">
+    <option value="">ユーザーを選択</option>
+  </select>
+
+  <p>現在のポイント：<strong id="admin-current-points">—</strong></p>
+
+  <label for="admin-point-amount">ポイント数</label>
+  <input
+    id="admin-point-amount"
+    type="number"
+    min="0"
+    max="100000000"
+    placeholder="例：10000"
+  >
+
+  <div class="admin-buttons">
+    <button id="admin-point-add" class="button button-primary" type="button">
+      ポイント追加
+    </button>
+
+    <button id="admin-point-subtract" class="button button-ghost" type="button">
+      ポイント減算
+    </button>
+
+    <button id="admin-point-set" class="button button-ghost" type="button">
+      指定ポイントに変更
+    </button>
+  </div>
+
+  <hr>
+
+  <h3>株価調整</h3>
+
+  <label for="admin-stock-select">対象企業</label>
+  <select id="admin-stock-select"></select>
+
+  <label for="admin-stock-percent">変動率（％）</label>
+  <input
+    id="admin-stock-percent"
+    type="number"
+    min="-90"
+    max="1000"
+    step="0.1"
+    placeholder="例：-5 または 10"
+  >
+
+  <div class="admin-buttons">
+    <button id="admin-stock-adjust" class="button button-primary" type="button">
+      株価を調整
+    </button>
+  </div>
+
+  <p id="admin-control-message" class="form-message" role="status"></p>
+</section>
+      
       <div id="global-message" class="notice hidden" role="status"></div>
     </section>
 
