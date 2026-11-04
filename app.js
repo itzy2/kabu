@@ -335,6 +335,7 @@ async function handleSession(session) {
     clearInterval(refreshTimer);
     refreshTimer = null;
 
+    hideSuspendedView();
     setLoggedInView(false);
     return;
   }
@@ -343,7 +344,12 @@ async function handleSession(session) {
     currentUser?.id === session.user.id &&
     currentProfile
   ) {
-    setLoggedInView(true);
+    if (currentProfile.is_suspended === true) {
+      showSuspendedView();
+    } else {
+      hideSuspendedView();
+      setLoggedInView(true);
+    }
     return;
   }
 
@@ -357,7 +363,7 @@ async function handleSession(session) {
   try {
     const { data: profile, error } = await db
       .from("profiles")
-      .select("id, display_name, role, points")
+      .select("id, display_name, role, points, is_suspended")
       .eq("id", currentUser.id)
       .maybeSingle();
 
@@ -365,11 +371,20 @@ async function handleSession(session) {
 
     if (!profile) {
       throw new Error(
-        "プロフィールが見つかりません。profilesテーブルを確認してください。"
+        "プロフィールが見つかりません。"
       );
     }
 
     currentProfile = profile;
+
+    // 利用停止ユーザーの場合
+    if (profile.is_suspended === true) {
+      showSuspendedView();
+      return;
+    }
+
+    hideSuspendedView();
+    setLoggedInView(true);
 
     $("whoami").textContent =
       `${profile.display_name}（${profile.role === "admin" ? "管理者" : "一般ユーザー"}）`;
@@ -387,15 +402,20 @@ async function handleSession(session) {
     await refreshDashboard();
 
     clearInterval(refreshTimer);
+
     refreshTimer = setInterval(
       () => refreshDashboard(),
       REFRESH_INTERVAL
     );
+
   } catch (error) {
     console.error("プロフィール読み込みエラー:", error);
 
     showGlobalMessage(
-      friendlyError(error, "プロフィールを読み込めませんでした。"),
+      friendlyError(
+        error,
+        "プロフィールを読み込めませんでした。"
+      ),
       true
     );
   }
