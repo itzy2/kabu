@@ -59,84 +59,6 @@ function showGlobalMessage(message, warning = false) {
 }
 
 function setLoggedInView(isLoggedIn) {
-   function showSuspendedView() {
-  clearInterval(refreshTimer);
-  refreshTimer = null;
-
-  $("auth-panel")?.classList.add("hidden");
-  $("app-panel")?.classList.add("hidden");
-  $("user-area")?.classList.add("hidden");
-
-  let panel = $("suspended-panel");
-
-  if (!panel) {
-    panel = document.createElement("div");
-    panel.id = "suspended-panel";
-
-    panel.style.cssText = `
-      max-width: 600px;
-      margin: 100px auto;
-      padding: 40px 25px;
-      text-align: center;
-      background: #ffffff;
-      color: #182235;
-      border-radius: 16px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-      font-family: sans-serif;
-    `;
-
-    document.body.appendChild(panel);
-  }
-
-  panel.innerHTML = `
-    <h1 style="font-size:26px;color:#c62828;">
-      ご利用停止のお知らせ
-    </h1>
-
-    <p style="font-size:17px;line-height:2;margin:30px 0;">
-      もうご利用いただけません。<br>
-      もう一度契約してください。
-    </p>
-
-    <button id="suspended-logout"
-      style="
-        padding:12px 35px;
-        border:0;
-        border-radius:8px;
-        background:#263b59;
-        color:white;
-        font-size:16px;
-        cursor:pointer;
-      ">
-      ログアウト
-    </button>
-  `;
-
-  panel.classList.remove("hidden");
-
-  $("suspended-logout").addEventListener("click", async () => {
-    const { error } = await db.auth.signOut();
-
-    if (error) {
-      alert("ログアウトできませんでした。");
-      return;
-    }
-
-    currentUser = null;
-    currentProfile = null;
-
-    clearInterval(refreshTimer);
-    refreshTimer = null;
-
-    panel.classList.add("hidden");
-    clearDashboard();
-    setLoggedInView(false);
-  });
-}
-
-function hideSuspendedView() {
-  $("suspended-panel")?.classList.add("hidden");
-}
   $("auth-panel")?.classList.toggle("hidden", isLoggedIn);
   $("app-panel")?.classList.toggle("hidden", !isLoggedIn);
   $("user-area")?.classList.toggle("hidden", !isLoggedIn);
@@ -335,7 +257,6 @@ async function handleSession(session) {
     clearInterval(refreshTimer);
     refreshTimer = null;
 
-    hideSuspendedView();
     setLoggedInView(false);
     return;
   }
@@ -344,12 +265,7 @@ async function handleSession(session) {
     currentUser?.id === session.user.id &&
     currentProfile
   ) {
-    if (currentProfile.is_suspended === true) {
-      showSuspendedView();
-    } else {
-      hideSuspendedView();
-      setLoggedInView(true);
-    }
+    setLoggedInView(true);
     return;
   }
 
@@ -363,7 +279,7 @@ async function handleSession(session) {
   try {
     const { data: profile, error } = await db
       .from("profiles")
-      .select("id, display_name, role, points, is_suspended")
+      .select("id, display_name, role, points")
       .eq("id", currentUser.id)
       .maybeSingle();
 
@@ -371,20 +287,11 @@ async function handleSession(session) {
 
     if (!profile) {
       throw new Error(
-        "プロフィールが見つかりません。"
+        "プロフィールが見つかりません。profilesテーブルを確認してください。"
       );
     }
 
     currentProfile = profile;
-
-    // 利用停止ユーザーの場合
-    if (profile.is_suspended === true) {
-      showSuspendedView();
-      return;
-    }
-
-    hideSuspendedView();
-    setLoggedInView(true);
 
     $("whoami").textContent =
       `${profile.display_name}（${profile.role === "admin" ? "管理者" : "一般ユーザー"}）`;
@@ -402,20 +309,15 @@ async function handleSession(session) {
     await refreshDashboard();
 
     clearInterval(refreshTimer);
-
     refreshTimer = setInterval(
       () => refreshDashboard(),
       REFRESH_INTERVAL
     );
-
   } catch (error) {
     console.error("プロフィール読み込みエラー:", error);
 
     showGlobalMessage(
-      friendlyError(
-        error,
-        "プロフィールを読み込めませんでした。"
-      ),
+      friendlyError(error, "プロフィールを読み込めませんでした。"),
       true
     );
   }
@@ -515,20 +417,17 @@ async function loadStocks() {
 async function loadProfiles() {
   const { data, error } = await db
     .from("profiles")
-    .select("id, display_name, role, points, is_suspended");
+    .select("id, display_name, role, points");
 
   if (error) throw error;
 
   profileList = data || [];
 
   const me = profileList.find(
-    (profile) =>
-      String(profile.id) === String(currentUser.id)
+    (profile) => String(profile.id) === String(currentUser.id)
   );
 
-  if (me) {
-    currentProfile = me;
-  }
+  if (me) currentProfile = me;
 }
 
 async function loadHoldings() {
