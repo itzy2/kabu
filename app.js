@@ -515,17 +515,20 @@ async function loadStocks() {
 async function loadProfiles() {
   const { data, error } = await db
     .from("profiles")
-    .select("id, display_name, role, points");
+    .select("id, display_name, role, points, is_suspended");
 
   if (error) throw error;
 
   profileList = data || [];
 
   const me = profileList.find(
-    (profile) => String(profile.id) === String(currentUser.id)
+    (profile) =>
+      String(profile.id) === String(currentUser.id)
   );
 
-  if (me) currentProfile = me;
+  if (me) {
+    currentProfile = me;
+  }
 }
 
 async function loadHoldings() {
