@@ -1266,3 +1266,48 @@ renderDashboard = function () {
     );
   }
 };
+
+// ================================
+// STOCK POINT 株式ニュース
+// ================================
+async function loadStockNews() {
+const newsList = document.getElementById("stock-news-list");
+
+if (!newsList) return;
+
+newsList.innerHTML = '<p class="empty">ニュースを読み込み中...</p>';
+
+const { data, error } = await supabase
+.from("stock_news")
+.select("*")
+.order("created_at", { ascending: false })
+.limit(20);
+
+if (error) {
+newsList.innerHTML =
+'<p class="empty">ニュースを取得できませんでした。</p>';
+console.error("ニュース取得エラー:", error);
+return;
+}
+
+if (!data || data.length === 0) {
+newsList.innerHTML =
+'<p class="empty">現在ニュースはありません。</p>';
+return;
+}
+
+newsList.innerHTML = data.map(news => "<article class="stock-news-item"> <div class="stock-news-header"> <strong>${escapeNewsText(news.headline)}</strong> <small>${new Date(news.created_at).toLocaleString("ja-JP")}</small> </div> <p>${escapeNewsText(news.body)}</p> </article>").join("");
+}
+
+function escapeNewsText(value) {
+return String(value ?? "").replace(/[&<>"']/g, character => ({
+"&": "&",
+"<": "<",
+">": ">",
+'"': """,
+"'": "'"
+})[character]);
+}
+
+// ログイン後にニュースを読み込む
+loadStockNews();
