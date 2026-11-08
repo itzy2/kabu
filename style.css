@@ -807,3 +807,88 @@ footer {
   color: var(--muted-color, #666666);
   font-size: 14px;
 }
+
+/* =================================
+   STOCK POINT 株式ニュース
+================================= */
+
+.news-card {
+    margin-top: 24px;
+    padding: 22px;
+    background: linear-gradient(145deg, #0b192d, #101f35);
+    border: 1px solid #244466;
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.news-card h2 {
+    color: #ffffff;
+    font-size: 22px;
+}
+
+.news-card .eyebrow {
+    color: #00d9ff;
+    letter-spacing: 2px;
+}
+
+#stock-news-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.stock-news-item {
+    padding: 16px;
+    background: rgba(20, 43, 70, 0.85);
+    border: 1px solid #294969;
+    border-left: 4px solid #00d9ff;
+    border-radius: 10px;
+    transition: 0.2s;
+}
+
+.stock-news-item:hover {
+    border-color: #00d9ff;
+    transform: translateX(3px);
+}
+
+.stock-news-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.stock-news-header strong {
+    color: #ffffff;
+    font-size: 15px;
+}
+
+.stock-news-header small {
+    color: #8ba6c5;
+    font-size: 11px;
+}
+
+.stock-news-item p {
+    color: #bdcde0;
+    margin: 10px 0 0;
+    line-height: 1.7;
+    font-size: 13px;
+}
+
+/* スマートフォン対応 */
+@media (max-width: 600px) {
+    .news-card {
+        padding: 15px;
+    }
+
+    .stock-news-item {
+        padding: 13px;
+    }
+
+    .stock-news-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
